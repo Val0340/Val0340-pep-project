@@ -23,8 +23,12 @@ public class AccountService {
         return accountDao.getAllAccounts();
     }
     @SuppressWarnings("unlikely-arg-type")
-    public static Account registerAccount(Account account){
-        if(account.username == null ||account.password.length() < 4)  ){
+    public static Account registerAccount(String user, String pass){
+        Account account = new Account();
+        account.username = user;
+        account.password = pass;
+    
+        if(account.username == null ||account.password.length() < 4){
             return null;
         }
         List<Account> existingAccount = accountDao.getAllAccounts();
@@ -34,7 +38,10 @@ public class AccountService {
         return accountDao.registerAccount(account);
     }
 
-    public static Account loginAccount(Account account){
+    public static Account loginAccount(String user, String pass){
+        Account account = new Account();
+        account.username = user;
+        account.password = pass;
         List<Account> existingAccount = accountDao.getAllAccounts();
         if(!existingAccount.contains(account)){
             return null;

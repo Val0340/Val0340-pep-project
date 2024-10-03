@@ -9,6 +9,8 @@ import Service.MessageService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import DAO.MessageDao;
+
 import java.sql.SQLException;
 import java.util.List;
 
@@ -33,8 +35,8 @@ public class SocialMediaController {
         app.get("/messages/{message_id}", this::getMessageByIdHandler);
         app.delete("/messages/{message_id}",this::deleteMessageByIdHandler);
         app.patch("/messages/{message_id}",this::updateMessageByIdHandler);
-        app.get("/accounts/{account_id}/message",this::getAccountByIdHandler);
-        app.start(8080);
+        app.get("/accounts/{account_id}/message",this::getMessageByAccountIdHandler);
+        //app.start(8080);
 
 
         return app;
@@ -51,7 +53,7 @@ public class SocialMediaController {
     private void postRegisterHandler (Context ctx) throws JsonProcessingException{
         ObjectMapper mapper = new ObjectMapper();
         Account account = mapper.readValue(ctx.body(), Account.class);
-        Account addedAccount = AccountService.registerAccount(account);
+        Account addedAccount = AccountService.registerAccount(account.getUsername(),account.getPassword());
         if(addedAccount!=null){
             ctx.json(mapper.writeValueAsString(addedAccount));
             ctx.status(200);
@@ -64,7 +66,7 @@ public class SocialMediaController {
     private void postLoginHandler(Context ctx) throws JsonProcessingException{
         ObjectMapper mapper = new ObjectMapper();
         Account account = mapper.readValue(ctx.body(), Account.class);
-        Account accountLogin = AccountService.loginAccount(account);
+        Account accountLogin = AccountService.loginAccount(account.getUsername(),account.getPassword());
         if(accountLogin != null){
             ctx.json(mapper.writeValueAsString(accountLogin));
             ctx.status(200);
@@ -76,7 +78,7 @@ public class SocialMediaController {
     private void postMessageHandler(Context ctx) throws JsonProcessingException{
         ObjectMapper mapper = new ObjectMapper();
         Message message = mapper.readValue(ctx.body(), Message.class);
-        Message addedMessage = MessageService.createMessage(message);
+        Message addedMessage = MessageService.createMessage(message.message_text);
         if(addedMessage!=null){
             ctx.json(mapper.writeValueAsString(addedMessage));
             ctx.status(200);
@@ -92,22 +94,42 @@ public class SocialMediaController {
     }
 
     private void getMessageByIdHandler(Context ctx){
-        int ms = Message.getPosted_by();
+        Message m = new Message();
+        int ms = m.getPosted_by();
         List<Message>messages = MessageService.getMessageById(ms);
         ctx.json(messages);
+        ctx.status(200);
     }
 
     private void deleteMessageByIdHandler(Context ctx){
-
+        Message m = new Message();
+        int dm = m.getMessage_id();
+        Message deletedmessage = MessageService.deleteMessageById(dm);
+        if(deletedmessage == null){
+            ctx.status(200);
+        }
+        ctx.json(deletedmessage);
+        ctx.status(200);
     }
 
-    private void updateMessageByIdHandler(Context ctx){
-        List<Message> message = messageService.updateMessage();
+    private void updateMessageByIdHandler(Context ctx)throws JsonProcessingException{
+        ObjectMapper mapper = new ObjectMapper();
+        Message message = mapper.readValue(ctx.body(), Message.class);
+        Message addedMessage = MessageService.updateMessage(message.message_text,message.message_id);
+        if(addedMessage!=null){
+            ctx.json(mapper.writeValueAsString(addedMessage));
+            ctx.status(200);
+        }else{
+            ctx.status(400);
+        }
     }
 
-    private void getAccountByIdHandler(Context ctx){
-        List<Account> account = AccountService.getAccountById();
+    private void getMessageByAccountIdHandler(Context ctx){
+        Message m = new Message();
+        int p = m.getPosted_by();
+        List<Message> account = MessageService.getAllMessagesByAccountId(p);
         ctx.json(account);
+        ctx.status(200);
     }
 
 }

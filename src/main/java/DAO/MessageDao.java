@@ -33,8 +33,9 @@ public class MessageDao {
 
     }
 
-    public Message getMessageById(int message_id){
+    public List<Message> getMessageById(int message_id){
         Connection con = ConnectionUtil.getConnection();
+        List<Message> messages = new ArrayList<>();
         try{
             String sql = "Select message_text from message where message_id = ?;";
             PreparedStatement stmt = con.prepareStatement(sql);
@@ -46,13 +47,13 @@ public class MessageDao {
                                               rs.getString("message_text"),
                                               rs.getLong("time_posted_epoch")
                                               );
-                return message;
+                messages.add(message);
             }
         }
         catch(SQLException e){
             System.out.println(e.getMessage());
         }
-        return null;
+        return messages;
     }
 
     public Message deleteMessageById(int message_id){
@@ -61,7 +62,15 @@ public class MessageDao {
             String sql ="Delete * from message where message_id = ?;";
             PreparedStatement ps = con.prepareStatement(sql);
             ps.setInt(1, message_id);
-            ps.executeUpdate();
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()){
+                Message message = new Message(rs.getInt("message_id"),
+                rs.getInt("posted_by"),
+                rs.getString("message_text"),
+                rs.getLong("time_posted_epoch")
+                );
+                return message;
+            }
         }
         catch(SQLException e){
             System.out.println(e.getMessage());
