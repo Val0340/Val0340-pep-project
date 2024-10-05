@@ -8,6 +8,7 @@ import Service.AccountService;
 import Service.MessageService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
 //import DAO.MessageDao;
 
@@ -86,7 +87,7 @@ public class SocialMediaController {
     private void postMessageHandler(Context ctx) throws JsonProcessingException,SQLException{
         Message message = mapper.readValue(ctx.body(), Message.class);
         MessageService ms = new MessageService();
-        Message addedMessage = ms.createMessage(message.getMessage_text(),message.getPosted_by());
+        Message addedMessage = ms.createMessage(message.getMessage_text(),message.getPosted_by(),message.getTime_posted_epoch());
 
         if(addedMessage!=null){
             ctx.json(mapper.writeValueAsString(addedMessage));
@@ -119,17 +120,20 @@ public class SocialMediaController {
         
     }
 
-    private void deleteMessageByIdHandler(Context ctx)throws SQLException{
+     private void deleteMessageByIdHandler(Context ctx)throws SQLException,NumberFormatException,MismatchedInputException{
         
         int dm = Integer.parseInt(ctx.pathParam("message_id"));
         MessageService m = new MessageService();
         boolean deletedmessage = m.deleteMessageById(dm);
        if(deletedmessage){
-       // ctx.status(200);
         ctx.json(deletedmessage);
-       }
-       ctx.status(200);
+        ctx.status(200);
+        
+       }else {
+       
+       ctx.status(200);}
     }
+   
 
     private void updateMessageByIdHandler(Context ctx)throws JsonProcessingException,SQLException{
         ObjectMapper mapper = new ObjectMapper();

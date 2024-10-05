@@ -43,18 +43,17 @@ public class AccountDao {
             String sql = "Insert into account (username,password) values(?,?);";
 
             try( Connection con = ConnectionUtil.getConnection();
-            PreparedStatement stmt = con.prepareStatement(sql)){
+            PreparedStatement stmt = con.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){
 
                 stmt.setString(1,account.getUsername());
                 stmt.setString(2,account.getPassword());
                 stmt.executeUpdate();
-               // try(ResultSet rs = stmt.executeQuery()){
-                   // if(rs.next()){
-                       // return new Account(rs.getInt("account_id"),
-                         //                rs.getString("username"),
-                           //              rs.getString("password"));
-                    // }
-               // }
+               
+                try(ResultSet keys = stmt.getGeneratedKeys()){
+                    if(keys.next()){
+                        account.setAccount_id(keys.getInt(1));
+                    }
+                }
             }catch (SQLException e) {
                 e.printStackTrace(); 
                 throw e; 
