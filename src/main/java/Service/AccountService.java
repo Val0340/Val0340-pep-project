@@ -2,51 +2,60 @@ package Service;
 
 import Model.Account;
 import DAO.AccountDao;
+
+import java.sql.SQLException;
 import java.util.List;
 
 
 
 public class AccountService {
     
-    private static AccountDao accountDao;
+    public  AccountDao accountDao;
 
     public AccountService (){
         accountDao = new AccountDao();
     }
 
-    @SuppressWarnings("static-access")
+   
     public AccountService(AccountDao accountDao){
         this.accountDao = accountDao;
     }
 
-    public List<Account> getAllAccounts(){
+    public List<Account> getAllAccounts()throws SQLException{
         return accountDao.getAllAccounts();
     }
-    @SuppressWarnings("unlikely-arg-type")
-    public static Account registerAccount(String user, String pass){
-        Account account = new Account();
-        account.username = user;
-        account.password = pass;
     
-        if(account.username == null ||account.password.length() < 4){
+    public  Account registerAccount(String user, String pass, int acc_id) throws SQLException{
+      
+    
+        if(user == null || pass.length() < 4 || user == ""){
             return null;
         }
+
         List<Account> existingAccount = accountDao.getAllAccounts();
-        if(existingAccount.contains(account.getUsername())){
-            return null;
+        for (Account acc : existingAccount){
+            if(acc.getUsername().equals(user)){
+                return null;
+            }
         }
+    
+        Account account = new Account();
+        account.setUsername(user); 
+        account.setPassword(pass);
+        account.getAccount_id();
+        //account.setAccount_id(acc_id);
+
         return accountDao.registerAccount(account);
     }
 
-    public static Account loginAccount(String user, String pass){
-        Account account = new Account();
-        account.username = user;
-        account.password = pass;
+    public Account loginAccount(String user, String pass) throws SQLException{
         List<Account> existingAccount = accountDao.getAllAccounts();
-        if(!existingAccount.contains(account)){
-            return null;
+        for ( Account acc : existingAccount){
+            if (acc.getUsername().equals(user)&& acc.getPassword().equals(pass)){
+                return acc;
+            }
         }
-
-        return accountDao.loginAccount(account);
+       
+        return null;
     }
 }

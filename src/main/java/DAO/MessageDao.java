@@ -10,13 +10,13 @@ import java.util.List;
 
 public class MessageDao {
     
-    public List<Message>getAllMessages(){
-        Connection con = ConnectionUtil.getConnection();
+    public List<Message>getAllMessages() throws SQLException{
         List<Message> messages = new ArrayList<>();
-        try{
-            String sql = "Select * from message;";
+         String sql = "Select * from message;";
+        try( Connection con = ConnectionUtil.getConnection();
+       
             PreparedStatement ps = con.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery();
+            ResultSet rs = ps.executeQuery()){
             while(rs.next()){
                 Message message = new Message (rs.getInt("message_id"),
                                                rs.getInt("posted_by"),
@@ -24,117 +24,115 @@ public class MessageDao {
                                                rs.getLong("time_posted_epoch"));
                 messages.add(message);
             }
-            
         }
-        catch(SQLException e){
-            System.out.println(e.getMessage());
+            return messages;
         }
-        return messages;
+        
+        
 
-    }
+    
 
-    public List<Message> getMessageById(int message_id){
-        Connection con = ConnectionUtil.getConnection();
-        List<Message> messages = new ArrayList<>();
-        try{
-            String sql = "Select message_text from message where message_id = ?;";
-            PreparedStatement stmt = con.prepareStatement(sql);
+    public Message getMessageById(int message_id) throws SQLException{
+        
+            Message message = null;
+            String sql = "Select * from message where message_id = ?;";
+
+            try( Connection con = ConnectionUtil.getConnection();
+            PreparedStatement stmt = con.prepareStatement(sql)){
+
             stmt.setInt(1, message_id);
-            ResultSet rs = stmt.executeQuery();
-            while(rs.next()){
-                Message message = new Message(rs.getInt("message_id"),
+
+           try( ResultSet rs = stmt.executeQuery()){
+            if(rs.next()){
+                 message = new Message(rs.getInt("message_id"),
                                               rs.getInt("posted_by"),
                                               rs.getString("message_text"),
-                                              rs.getLong("time_posted_epoch")
-                                              );
-                messages.add(message);
+                                              rs.getLong("time_posted_epoch"));
             }
         }
-        catch(SQLException e){
-            System.out.println(e.getMessage());
         }
-        return messages;
-    }
+            return message;
+        }
+        
+       
+    
 
-    public Message deleteMessageById(int message_id){
-        Connection con = ConnectionUtil.getConnection();
-        try{
-            String sql ="Delete * from message where message_id = ?;";
-            PreparedStatement ps = con.prepareStatement(sql);
-            ps.setInt(1, message_id);
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()){
-                Message message = new Message(rs.getInt("message_id"),
-                rs.getInt("posted_by"),
-                rs.getString("message_text"),
-                rs.getLong("time_posted_epoch")
-                );
-                return message;
+    public boolean deleteMessageById(int message_id) throws SQLException{
+         String sql ="Delete from message where message_id = ?;";
+
+            try(Connection con = ConnectionUtil.getConnection();
+            PreparedStatement ps = con.prepareStatement(sql)){ ps.setInt(1, message_id);
+                return ps.executeUpdate()> 0; 
             }
-        }
-        catch(SQLException e){
-            System.out.println(e.getMessage());
-        }
-        return null;
+           
+             
+           // while(rs.next()){
+             //   Message message = new Message(rs.getInt("message_id"),
+             //   rs.getInt("posted_by"),
+              //  rs.getString("message_text"),
+             //   rs.getLong("time_posted_epoch")
+              //  );
+               // return message;
+          //  }
+        
+        
     }
 
-    public Message updateMessage(Message messages){
-        Connection con = ConnectionUtil.getConnection();
-        try{
-            String sql = "Update message Set message_text = ? where message_id =?;";
-            PreparedStatement p = con.prepareStatement(sql);
-            p.setString(1,messages.getMessage_text());
-            p.setInt(2, messages.getMessage_id());
-            ResultSet rs = p.executeQuery();
-            while(rs.next()){
-                Message message = new Message(rs.getInt("message_id"),
-                                              rs.getInt("posted_by"),
-                                              rs.getString("message_text"),
-                                              rs.getInt("time_posted_epoch"));
-                return message;
+    public boolean updateMessage(Message messages) throws SQLException{
+        
+        String sql = "Update message Set message_text = ? where message_id =?;";
+        try(Connection con = ConnectionUtil.getConnection();
+            PreparedStatement p = con.prepareStatement(sql)){
+                p.setString(1,messages.getMessage_text());
+                p.setInt(2, messages.getMessage_id());
+                return p.executeUpdate()>0;
             }
-        }
-        catch(SQLException e){
-            System.out.println(e.getMessage());
-        }
-        return null;
+            
+             
+           // while(rs.next()){
+             //   Message message = new Message(rs.getInt("message_id"),
+                  //                            rs.getInt("posted_by"),
+                  //                            rs.getString("message_text"),
+                   //                           rs.getInt("time_posted_epoch"));
+               // return message;
+            
+       // }
+       
     }
 
-    public List<Message> getAllMessagesByAccountId(int posted_by){
-        Connection connect = ConnectionUtil.getConnection();
+    public List<Message> getAllMessagesByAccountId(int posted_by) throws SQLException{
+        
         List<Message> messages = new ArrayList<>();
-        try{
-            String sql = "Select * from message where account_id =?;";
-            PreparedStatement st = connect.prepareStatement(sql);
+        String sql = "Select * from message where posted_by = ?;";
+
+        try(
+            Connection connect = ConnectionUtil.getConnection();
+            PreparedStatement st = connect.prepareStatement(sql)){
             st.setInt(1, posted_by);
-            ResultSet rs = st.executeQuery();
-            while(rs.next()){
-                Message message = new Message(rs.getInt("message_id"),
+            try(
+            ResultSet rs = st.executeQuery()){
+            if(rs.next()){
+                Message mess = new Message(rs.getInt("message_id"),
                                 rs.getInt("posted_by"),
                                 rs.getString("message_text"),
                                 rs.getLong("time_posted_epoch"));
-                messages.add(message);
+                messages.add(mess);
             }
+        }
+    }
         
-        }
-        catch(SQLException e){
-            System.out.println(e.getMessage());
-        }
+        
         return messages;
     }
 
-    public Message createMessage(Message message){
+    public Message createMessage(Message message)throws SQLException{
         Connection con = ConnectionUtil.getConnection();
-        try{
-            String sql = "Insert into message (message_text) values(?);";
+        
+            String sql = "Insert into message (message_text,posted_by) values(?,?);";
             PreparedStatement stmt = con.prepareStatement(sql);
             stmt.setString(1,message.getMessage_text());
+            stmt.setInt(2,message.getPosted_by());
             stmt.executeUpdate();
             return message;
-        }
-        catch(SQLException e){
-            System.out.println(e.getMessage());
-        }
-        return message;
-    }
-}
+    }}
+

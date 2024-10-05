@@ -9,7 +9,7 @@ import Service.MessageService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import DAO.MessageDao;
+//import DAO.MessageDao;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -25,6 +25,7 @@ public class SocialMediaController {
      * suite must receive a Javalin object from this method.
      * @return a Javalin app object which defines the behavior of the Javalin controller.
      */
+    public static final ObjectMapper mapper = new ObjectMapper();
     public Javalin startAPI() {
         Javalin app = Javalin.create();
         app.get("/example", this::exampleHandler);
@@ -50,23 +51,30 @@ public class SocialMediaController {
         context.json("Log in with your account creditials");
     }
 
-    private void postRegisterHandler (Context ctx) throws JsonProcessingException{
-        ObjectMapper mapper = new ObjectMapper();
+    private void postRegisterHandler (Context ctx)  {
+       try{ 
         Account account = mapper.readValue(ctx.body(), Account.class);
-        Account addedAccount = AccountService.registerAccount(account.getUsername(),account.getPassword());
+        AccountService c = new AccountService();
+        Account addedAccount = c.registerAccount(account.getUsername(),account.getPassword(),account.getAccount_id());
+       // Account aId = addedAccount , account.getAccount_id();
         if(addedAccount!=null){
-            ctx.json(mapper.writeValueAsString(addedAccount));
-            ctx.status(200);
-        }else{
+            ctx.json(addedAccount).status(200);
+            //ctx.result()
+        }
+        else{
             ctx.status(400);
         }
+    }catch(SQLException | JsonProcessingException e){
+        ctx.status(400);
+    }
+        //ctx.status(200);
 
     }
 
-    private void postLoginHandler(Context ctx) throws JsonProcessingException{
-        ObjectMapper mapper = new ObjectMapper();
+    private void postLoginHandler(Context ctx) throws JsonProcessingException, SQLException{
         Account account = mapper.readValue(ctx.body(), Account.class);
-        Account accountLogin = AccountService.loginAccount(account.getUsername(),account.getPassword());
+        AccountService c = new AccountService();
+        Account accountLogin = c.loginAccount(account.getUsername(),account.getPassword());
         if(accountLogin != null){
             ctx.json(mapper.writeValueAsString(accountLogin));
             ctx.status(200);
@@ -75,10 +83,11 @@ public class SocialMediaController {
         }
     }
 
-    private void postMessageHandler(Context ctx) throws JsonProcessingException{
-        ObjectMapper mapper = new ObjectMapper();
+    private void postMessageHandler(Context ctx) throws JsonProcessingException,SQLException{
         Message message = mapper.readValue(ctx.body(), Message.class);
-        Message addedMessage = MessageService.createMessage(message.message_text);
+        MessageService ms = new MessageService();
+        Message addedMessage = ms.createMessage(message.getMessage_text(),message.getPosted_by());
+
         if(addedMessage!=null){
             ctx.json(mapper.writeValueAsString(addedMessage));
             ctx.status(200);
@@ -86,48 +95,61 @@ public class SocialMediaController {
             ctx.status(400);
         }
     }
-    private void getMessageHandler(Context ctx){
-        List<Message> messages = MessageService.getAllMessages();
+    private void getMessageHandler(Context ctx)throws SQLException{
+        MessageService m = new MessageService();
+        List<Message> messages = m.getAllMessages();
         ctx.json(messages);
         ctx.status(200);
 
     }
 
-    private void getMessageByIdHandler(Context ctx){
-        Message m = new Message();
-        int ms = m.getPosted_by();
-        List<Message>messages = MessageService.getMessageById(ms);
-        ctx.json(messages);
-        ctx.status(200);
-    }
-
-    private void deleteMessageByIdHandler(Context ctx){
-        Message m = new Message();
-        int dm = m.getMessage_id();
-        Message deletedmessage = MessageService.deleteMessageById(dm);
-        if(deletedmessage == null){
-            ctx.status(200);
+    private void getMessageByIdHandler(Context ctx)throws SQLException{
+       // Message m = new Message();
+        int ms = Integer.parseInt(ctx.pathParam("message_id"));
+        MessageService m = new MessageService();
+        Message messages = m.getMessageById(ms);
+        if (messages!= null){
+            ctx.json(messages);
         }
+        else{
+            ctx.status(404);
+        }
+
+        ctx.status(200);
+        
+    }
+
+    private void deleteMessageByIdHandler(Context ctx)throws SQLException{
+        
+        int dm = Integer.parseInt(ctx.pathParam("message_id"));
+        MessageService m = new MessageService();
+        boolean deletedmessage = m.deleteMessageById(dm);
+       if(deletedmessage){
+       // ctx.status(200);
         ctx.json(deletedmessage);
-        ctx.status(200);
+       }
+       ctx.status(200);
     }
 
-    private void updateMessageByIdHandler(Context ctx)throws JsonProcessingException{
+    private void updateMessageByIdHandler(Context ctx)throws JsonProcessingException,SQLException{
         ObjectMapper mapper = new ObjectMapper();
         Message message = mapper.readValue(ctx.body(), Message.class);
-        Message addedMessage = MessageService.updateMessage(message.message_text,message.message_id);
-        if(addedMessage!=null){
+        MessageService m = new MessageService();
+        boolean addedMessage = m.updateMessage(message.message_text,message.message_id);
+        if(addedMessage){
             ctx.json(mapper.writeValueAsString(addedMessage));
             ctx.status(200);
         }else{
             ctx.status(400);
         }
+        //ctx.status(200);
     }
 
-    private void getMessageByAccountIdHandler(Context ctx){
-        Message m = new Message();
-        int p = m.getPosted_by();
-        List<Message> account = MessageService.getAllMessagesByAccountId(p);
+    private void getMessageByAccountIdHandler(Context ctx)throws SQLException{
+       // Message m = new Message();
+        int p = Integer.parseInt(ctx.pathParam("account_id"));
+        MessageService m = new MessageService();
+        List<Message> account = m.getAllMessagesByAccountId(p);
         ctx.json(account);
         ctx.status(200);
     }
