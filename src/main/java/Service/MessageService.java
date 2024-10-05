@@ -44,6 +44,7 @@ public class MessageService {
    }
 
    public List<Message> getAllMessagesByAccountId(int posted_by) throws SQLException{
+      if()
     return messageDao.getAllMessagesByAccountId(posted_by);
    }
   
